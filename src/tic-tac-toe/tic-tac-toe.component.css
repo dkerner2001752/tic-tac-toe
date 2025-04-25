@@ -1,0 +1,25 @@
+.header-container {
+  text-align: center;
+}
+
+.tic-tac-toe-container {
+  display: grid;
+  width: 200px;
+  grid-template-columns: auto auto auto;
+  grid-template-rows: auto auto auto;
+  gap: 1rem;
+  justify-self: center;
+}
+
+.button-item {
+  width: 2rem;
+  height: 2rem;
+  cursor: pointer;
+}
+
+.button-container {
+  display: flex;
+  justify-self: center;
+  padding-top: 3rem;
+  gap: 1rem;
+}
