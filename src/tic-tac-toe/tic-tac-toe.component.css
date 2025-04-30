@@ -2,6 +2,13 @@
   text-align: center;
 }
 
+.game-id-container {
+  justify-self: center;
+  display: grid;
+  grid-template-columns: auto auto auto;
+  gap: 0.25rem;
+}
+
 .tic-tac-toe-container {
   display: grid;
   width: 200px;
@@ -10,6 +17,7 @@
   gap: 1rem;
   justify-self: center;
   justify-content: center;
+  padding-top: 1rem;
 }
 
 .button-item {
