@@ -1,8 +1,14 @@
 <h3 class="header-container">Good luck</h3>
-<div class="tic-tac-toe-container" *ngIf="ticTacToeFormGroup" [formGroup]="ticTacToeFormGroup">
-  <div *ngFor="let formControl of ticTacToeFormGroup.controls.values.controls; index as i">
-    <button class="button-item" (click)="onButtonClick(i)">{{ formControl.value }}</button>
+<div class="tic-tac-toe-container" [formGroup]="ticTacToeFormGroup">
+  <div *ngFor="let formControl of ticTacToeFormGroup.controls.buttonValues.controls; index as i">
+    <button class="button-item" [disabled]="formControl.value" (click)="onButtonClick(i)">{{ formControl.value }}</button>
   </div>
+</div>
+<div class="current-player-container">
+  Current Player: {{ currentPlayer }}
+</div>
+<div class="message-container">
+  Winner: {{ playerWon$ | async}}
 </div>
 <div class="button-container">
   <button (click)="navigateToHome()">Home</button>
