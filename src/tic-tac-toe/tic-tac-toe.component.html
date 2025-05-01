@@ -3,13 +3,16 @@
   Enter Game Id:
   <input type="text" formControlName="gameId">
 </div>
+<div class="current-player-container">
+  You are Player: {{ this.ticTacToeFormGroup.controls.selectedPlayer.value }}
+</div>
 <div class="tic-tac-toe-container" [formGroup]="ticTacToeFormGroup">
   <div *ngFor="let formControl of ticTacToeFormGroup.controls.buttonValues.controls; index as i">
     <button class="button-item" [disabled]="formControl.value" (click)="onButtonClick(i)">{{ formControl.value }}</button>
   </div>
 </div>
 <div class="current-player-container">
-  Current Player: {{ currentPlayer }}
+  Current Player: {{ this.ticTacToeFormGroup.controls.currentPlayer.value }}
 </div>
 <div class="message-container">
   Winner: {{ playerWon$ | async}}
@@ -18,4 +21,3 @@
   <button (click)="navigateToHome()">Home</button>
   <button (click)="playAgain()">Play Again</button>
 </div>
-<pre>{{ gameHistory | json }}</pre>

@@ -3,14 +3,19 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { TicTacToeType } from '../tic-tac-toe/tic-tac-toe.component';
 
+export interface MovesDto {
+  game: string,
+  move: number,
+  board: TicTacToeType[],
+}
+
 export interface PostGameDto {
-  game: string
-  move: number
-  board: TicTacToeType[]
+  players: string[],
+  moves: MovesDto[],
 }
 
 export interface GetGameDto {
-  moves: PostGameDto[]
+  moves: MovesDto[],
 }
 
 @Injectable({
@@ -27,10 +32,10 @@ export class TicTacToeService {
   }
 
   public async getGameHistory(gameId: string) {
-    return firstValueFrom(this.httpClient.get<GetGameDto>(`${this.baseUrl}game/${gameId}`));
+    return firstValueFrom(this.httpClient.get<PostGameDto>(`${this.baseUrl}game/${gameId}`));
   }
 
-  public async postGameProgress(body: PostGameDto[]) {
-    return firstValueFrom(this.httpClient.post(`${this.baseUrl}game`, body));
+  public async postGameProgress(body: PostGameDto, gameId: string) {
+    return firstValueFrom(this.httpClient.post(`${this.baseUrl}game/${gameId}`, body));
   }
 }

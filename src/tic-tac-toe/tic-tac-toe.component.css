@@ -9,6 +9,11 @@
   gap: 0.25rem;
 }
 
+.selected-player-container {
+  display: flex;
+  gap: 0.25rem;
+}
+
 .tic-tac-toe-container {
   display: grid;
   width: 200px;
