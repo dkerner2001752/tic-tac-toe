@@ -1,5 +1,7 @@
-<h1 class="game-title-container">Tic Tac Toe</h1>
-<div class="play-button-container">
-  <button (click)="navigateToGame()">Play</button>
+<div class="app-body" [style.background-color]="color">
+  <h1 class="game-title-container">Tic Tac Toe</h1>
+  <div class="play-button-container">
+    <button (click)="navigateToGame()">Play</button>
+  </div>
+  <router-outlet></router-outlet>
 </div>
-<router-outlet></router-outlet>

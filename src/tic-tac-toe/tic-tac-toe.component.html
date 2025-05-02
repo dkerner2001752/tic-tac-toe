@@ -1,21 +1,29 @@
 <h3 class="header-container">Good luck</h3>
 <div class="game-id-container" [formGroup]="ticTacToeFormGroup">
-  Enter Game Id:
-  <input type="text" formControlName="gameId">
+  <button (click)="copyGameId(gameId)">Enter Game Id:</button>
+  <input type="text" formControlName="gameId" #gameId>
 </div>
 <div class="current-player-container">
-  You are Player: {{ this.ticTacToeFormGroup.controls.selectedPlayer.value }}
+  <div class="player-x-container" *ngIf="ticTacToeFormGroup.controls.selectedPlayer.value !== 'Spectator'">
+    You are Player: {{ this.ticTacToeFormGroup.controls.selectedPlayer.value }}
+  </div>
+  <div class="spectator-container"
+       *ngIf="ticTacToeFormGroup.controls.selectedPlayer.value === 'Spectator'">
+    You are a Spectator
+  </div>
 </div>
 <div class="tic-tac-toe-container" [formGroup]="ticTacToeFormGroup">
   <div *ngFor="let formControl of ticTacToeFormGroup.controls.buttonValues.controls; index as i">
-    <button class="button-item" [disabled]="formControl.value" (click)="onButtonClick(i)">{{ formControl.value }}</button>
+    <button class="button-item"
+            [disabled]="formControl.value || ticTacToeFormGroup.controls.gameState.value !== GameState.YourMove || loading"
+            (click)="onButtonClick(i)">{{ formControl.value }}</button>
   </div>
 </div>
 <div class="current-player-container">
   Current Player: {{ this.ticTacToeFormGroup.controls.currentPlayer.value }}
 </div>
 <div class="message-container">
-  Winner: {{ playerWon$ | async}}
+  {{ this.ticTacToeFormGroup.controls.gameState.value }}
 </div>
 <div class="button-container">
   <button (click)="navigateToHome()">Home</button>
