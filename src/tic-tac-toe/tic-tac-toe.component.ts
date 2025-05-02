@@ -1,9 +1,9 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { AsyncPipe, NgForOf, NgIf } from '@angular/common';
+import { NgForOf, NgIf } from '@angular/common';
 import { MovesDto, PostGameDto, TicTacToeService } from '../app/tic-tac-toe.service';
-import { filter, interval, map, Observable, startWith, switchMap, tap } from 'rxjs';
+import { filter, interval, startWith, Subscription, switchMap, tap } from 'rxjs';
 
 enum GameState {
   StartGame = 'Waiting for Player 2',
@@ -36,7 +36,7 @@ interface TicTacToeOptions {
   templateUrl: './tic-tac-toe.component.html',
   styleUrl: './tic-tac-toe.component.css'
 })
-export class TicTacToeComponent implements OnInit {
+export class TicTacToeComponent implements OnInit, OnDestroy {
   public ticTacToeFormGroup!: FormGroup<TicTacToeOptions>;
 
   public hasPlayerWon = false;
@@ -45,7 +45,9 @@ export class TicTacToeComponent implements OnInit {
   public players: string[] = [];
   public gameState = {};
   public loading = false;
+  // public foo = webSocket();
 
+  private subscription = new Subscription();
   private readonly router = inject(Router);
   private readonly tttService = inject(TicTacToeService);
 
@@ -68,6 +70,7 @@ export class TicTacToeComponent implements OnInit {
       gameState: new FormControl(GameState.StartGame, {nonNullable: true}),
     });
 
+    this.subscription.add(
     this.ticTacToeFormGroup.controls.gameId.valueChanges.pipe(
       startWith(this.ticTacToeFormGroup.controls.gameId),
       switchMap(() => {
@@ -118,13 +121,16 @@ export class TicTacToeComponent implements OnInit {
       this.players = response.players;
       this.playerMoveCounter = history.length + 1;
       this.ticTacToeFormGroup.controls.currentPlayer.setValue(history.length % 2 == 0 ? 'x' : 'o');
-      console.log(history.length);
       this.ticTacToeFormGroup.controls.gameState.setValue(this.validateGameState());
       const last = this.gameHistory.at(-1);
       if (last) {
         this.ticTacToeFormGroup.controls.buttonValues.setValue(last.board);
       }
-    });
+    }));
+  }
+
+  public ngOnDestroy() {
+    this.subscription.unsubscribe();
   }
 
   public async navigateToHome() {
@@ -209,6 +215,10 @@ export class TicTacToeComponent implements OnInit {
     } else {
       return 'Draw';
     }
+  }
+
+  public copyGameId(gameId: HTMLInputElement) {
+    navigator.clipboard.writeText(gameId.value);
   }
 
   protected readonly GameState = GameState;

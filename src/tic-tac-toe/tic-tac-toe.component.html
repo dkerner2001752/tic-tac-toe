@@ -1,7 +1,7 @@
 <h3 class="header-container">Good luck</h3>
 <div class="game-id-container" [formGroup]="ticTacToeFormGroup">
-  Enter Game Id:
-  <input type="text" formControlName="gameId">
+  <button (click)="copyGameId(gameId)">Enter Game Id:</button>
+  <input type="text" formControlName="gameId" #gameId>
 </div>
 <div class="current-player-container">
   <div class="player-x-container" *ngIf="ticTacToeFormGroup.controls.selectedPlayer.value !== 'Spectator'">
