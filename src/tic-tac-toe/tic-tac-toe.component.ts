@@ -1,16 +1,20 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { AsyncPipe, NgForOf, NgIf } from '@angular/common';
-import { TicTacToeService } from '../app/tic-tac-toe.service';
-import { map, Observable } from 'rxjs';
+import { AsyncPipe, NgForOf } from '@angular/common';
+import { MovesDto, PostGameDto, TicTacToeService } from '../app/tic-tac-toe.service';
+import { filter, interval, map, merge, Observable, startWith, switchMap, tap } from 'rxjs';
 
-type TicTacToeType = 'X' | 'O' | null;
+
+export type TicTacToeType = 'x' | 'o' | '';
 
 type TicTacToeWinner = TicTacToeType | 'Draw';
 
 interface TicTacToeOptions {
   buttonValues: FormArray<FormControl<TicTacToeType>>;
+  gameId: FormControl<string>;
+  currentPlayer: FormControl<TicTacToeType | null>
+  selectedPlayer: FormControl<TicTacToeType>
 }
 
 @Component({
@@ -29,9 +33,10 @@ export class TicTacToeComponent implements OnInit {
   public playerWon$!: Observable<TicTacToeWinner>;
 
   public hasPlayerWon = false;
-  public currentPlayer: TicTacToeType = 'X';
-
-  public gameHistory = {};
+  public playerMoveCounter = 1;
+  public gameHistory: MovesDto[] = [];
+  public players: string[] = [];
+  public gameState = {};
 
   private readonly router = inject(Router);
   private readonly tttService = inject(TicTacToeService);
@@ -39,24 +44,72 @@ export class TicTacToeComponent implements OnInit {
   ngOnInit() {
     this.ticTacToeFormGroup = new FormGroup<TicTacToeOptions>({
       buttonValues: new FormArray<FormControl<TicTacToeType>>([
-        new FormControl(null),
-        new FormControl(null),
-        new FormControl(null),
-        new FormControl(null),
-        new FormControl(null),
-        new FormControl(null),
-        new FormControl(null),
-        new FormControl(null),
-        new FormControl(null)
-      ])
+        new FormControl('', {nonNullable: true}),
+        new FormControl('', {nonNullable: true}),
+        new FormControl('', {nonNullable: true}),
+        new FormControl('', {nonNullable: true}),
+        new FormControl('', {nonNullable: true}),
+        new FormControl('', {nonNullable: true}),
+        new FormControl('', {nonNullable: true}),
+        new FormControl('', {nonNullable: true}),
+        new FormControl('', {nonNullable: true})
+      ]),
+      gameId: new FormControl(crypto.randomUUID(), {nonNullable: true, updateOn: 'blur'}),
+      currentPlayer: new FormControl(null),
+      selectedPlayer: new FormControl('', {nonNullable: true}),
+    });
+
+    const gameIdChange$= this.ticTacToeFormGroup.controls.gameId.valueChanges.pipe(
+      startWith(this.ticTacToeFormGroup.controls.gameId),
+      switchMap(() => {
+        return this.tttService.getGameHistory(this.ticTacToeFormGroup.controls.gameId.value);
+      }),
+      tap(response => {
+        this.ticTacToeFormGroup.controls.buttonValues.reset();
+        this.players = [];
+        this.gameHistory = [];
+        this.playerMoveCounter = 1;
+        this.ticTacToeFormGroup.controls.currentPlayer.setValue('x');
+
+        if (response.players.length === 0) {
+          const game: PostGameDto = {
+            players: ['x'],
+            moves: this.gameHistory,
+          }
+          this.tttService.postGameProgress(game, this.ticTacToeFormGroup.controls.gameId.value);
+          this.ticTacToeFormGroup.controls.selectedPlayer.setValue('x');
+        }
+        if (response.players.length === 1) {
+          const game: PostGameDto = {
+            players: ['x', 'o'],
+            moves: this.gameHistory,
+          }
+          this.tttService.postGameProgress(game, this.ticTacToeFormGroup.controls.gameId.value);
+          this.ticTacToeFormGroup.controls.selectedPlayer.setValue('o');
+        }
+      }),
+      switchMap(() => {
+        return interval(1000);
+      }),
+      filter(() => this.ticTacToeFormGroup.controls.selectedPlayer.value !== this.ticTacToeFormGroup.controls.currentPlayer.value),
+      switchMap(() => {
+        return this.tttService.getGameHistory(this.ticTacToeFormGroup.controls.gameId.value);
+      }),
+    ).subscribe(response => {
+      const history = response.moves;
+      this.gameHistory = history;
+      this.players = response.players;
+      this.playerMoveCounter = history.length + 1;
+      this.ticTacToeFormGroup.controls.currentPlayer.setValue(history.length % 2 == 0 ? 'x' : 'o');
+      const last = history.at(-1);
+      if (last) {
+        this.ticTacToeFormGroup.controls.buttonValues.setValue(last.board);
+      }
     });
 
     this.playerWon$ = this.ticTacToeFormGroup.controls.buttonValues.valueChanges.pipe(
       map(x => this.validateWinner(x))
     );
-
-    this.tttService.getGameIDList().then(gameIDList => {
-    });
   }
 
   public async navigateToHome() {
@@ -64,23 +117,37 @@ export class TicTacToeComponent implements OnInit {
   }
 
   public onButtonClick(index: number) {
-    this.ticTacToeFormGroup.controls.buttonValues.controls[index].patchValue(this.currentPlayer);
+    if (!this.ticTacToeFormGroup.controls.currentPlayer.value)
+      return;
+    this.ticTacToeFormGroup.controls.buttonValues.controls[index].patchValue(this.ticTacToeFormGroup.controls.currentPlayer.value);
 
-    this.tttService.postGameProgress([]).then(response => {
-      console.log(response);
+    const gameUpdate: MovesDto = {
+      game: this.ticTacToeFormGroup.controls.gameId.value,
+      move: this.playerMoveCounter,
+      board: this.ticTacToeFormGroup.controls.buttonValues.value
+    }
+
+    this.gameHistory.push(gameUpdate);
+
+    const game: PostGameDto = {
+      players: this.players,
+      moves: this.gameHistory,
+    };
+    this.tttService.postGameProgress(game, this.ticTacToeFormGroup.controls.gameId.value).then(response => {
+      this.gameState = response;
     }).catch(error => {
       console.log(error);
     });
 
     if (!this.hasPlayerWon) {
-      this.currentPlayer = (this.currentPlayer === 'X') ? 'O' : 'X';
+      this.ticTacToeFormGroup.controls.currentPlayer.setValue((this.ticTacToeFormGroup.controls.currentPlayer.value === 'x') ? 'o' : 'x');
     }
+
+    this.playerMoveCounter++
   }
 
   public playAgain() {
-    this.ticTacToeFormGroup.controls.buttonValues.reset();
-
-    this.currentPlayer === 'X';
+    this.ticTacToeFormGroup.controls.gameId.reset(crypto.randomUUID());
   }
 
   public validateWinner(arrValues: TicTacToeType[]) {
@@ -95,17 +162,16 @@ export class TicTacToeComponent implements OnInit {
 
     const testArr = [rowOne, rowTwo, rowThree, columnOne, columnTwo, columnThree, diagonalOne, diagonalTwo];
 
-    const testForX = testArr.some(line => (line.every(x => x === 'X')));
-    const testForO = testArr.some(line => (line.every(x => x === 'O')));
-
-    const testForNull = arrValues.some(square => square === null)
+    const testForX = testArr.some(line => (line.every(x => x === 'x')));
+    const testForO = testArr.some(line => (line.every(x => x === 'o')));
+    const testForNull = arrValues.some(square => square === '');
 
     if (testForX) {
-      return 'X';
+      return 'x';
     } else if (testForO) {
-      return 'O';
+      return 'o';
     } else if (testForNull) {
-      return null;
+      return '';
     } else {
       return 'Draw';
     }
