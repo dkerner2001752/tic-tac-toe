@@ -4,7 +4,16 @@
   <input type="text" formControlName="gameId">
 </div>
 <div class="current-player-container">
-  You are Player: {{ this.ticTacToeFormGroup.controls.selectedPlayer.value }}
+  <div class="player-x-container" *ngIf="ticTacToeFormGroup.controls.selectedPlayer.value == 'x'">
+    You are Player: {{ this.ticTacToeFormGroup.controls.selectedPlayer.value }}
+  </div>
+  <div class="player-o-container" *ngIf="ticTacToeFormGroup.controls.selectedPlayer.value === 'o'">
+    You are Player: {{ this.ticTacToeFormGroup.controls.selectedPlayer.value }}
+  </div>
+  <div class="spectator-container"
+       *ngIf="ticTacToeFormGroup.controls.selectedPlayer.value === 'Spectator'">
+    You are a Spectator
+  </div>
 </div>
 <div class="tic-tac-toe-container" [formGroup]="ticTacToeFormGroup">
   <div *ngFor="let formControl of ticTacToeFormGroup.controls.buttonValues.controls; index as i">
